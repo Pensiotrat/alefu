@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Albertych-TV</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    body {
+      background-color: #8fbc8f;
+    }
+    </style>
+</head>
+<body>
+  <video id="video" controls width="800"></video>
+  <div id="channels"></div>
+
+  <script>
+    async function loadM3U(url) {
+      const response = await fetch(url);
+      const text = await response.text();
+      const lines = text.split('\n');
+      let channels = [];
+      let currentName = '';
+
+      for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith('#EXTINF:')) {
+          // Извлекаем название канала
+          const nameMatch = line.match(/,(.*)$/);
+          currentName = nameMatch ? nameMatch[1] : 'Unknown';
+        } else if (line && !line.startsWith('#')) {
+          channels.push({ name: currentName, url: line });
+          currentName = '';
+        }
+      }
+
+      const container = document.getElementById('channels');
+      channels.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.textContent = ch.name;
+        btn.onclick = () => playStream(ch.url);
+        container.appendChild(btn);
+        container.appendChild(document.createElement('br'));
+      });
+    }
+
+    function playStream(url) {
+      const video = document.getElementById('video');
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Для Safari
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => video.play());
+      }
+    }
+
+    // Пример: загрузить плейлист
+    loadM3U('http://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV');
+  </script>
+</body>
+</html>
