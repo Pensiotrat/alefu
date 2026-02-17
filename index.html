@@ -1,62 +1,485 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <title>Albertych-TV</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <style>
-    body {
-      background-color: #8fbc8f;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат для 10 пользователей</title>
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.12/index.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #loginScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-align: center;
+        }
+        #loginScreen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 400px;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 14px;
+            background: #00c853;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #00a842;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #chatScreen {
+            display: none;
+            flex: 1;
+            height: calc(100vh - 60px);
+        }
+        .container {
+            display: flex;
+            height: 100%;
+        }
+        .sidebar {
+            width: 280px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #34495e;
+        }
+        .user-count {
+            background: #3498db;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .users-list {
+            list-style: none;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #34495e;
+            transition: background 0.2s;
+        }
+        .user-item:hover {
+            background: #4a6278;
+        }
+        .user-status {
+            width: 12px;
+            height: 12px;
+            background: #2ecc71;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.sent {
+            background: #e3f2fd;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .message.received {
+            background: #f5f5f5;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        .message-username {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .message-time {
+            color: #7f8c8d;
+        }
+        .message-content {
+            word-wrap: break-word;
+        }
+        .input-container {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        .message-input:focus {
+            border-color: #3498db;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            font-size: 14px;
+        }
+        .invite-link {
+            display: block;
+            background: #3498db;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            word-break: break-all;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .invite-link:hover {
+            background: #2980b9;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
-  <video id="video" controls width="800"></video>
-  <div id="channels"></div>
+    <div id="loginScreen">
+        <h1>Добро пожаловать в чат</h1>
+        <div class="input-group">
+            <input type="text" id="usernameInput" placeholder="Введите ваше имя" maxlength="20">
+            <button id="joinButton">Войти в чат</button>
+        </div>
+        <p>Приглашение отправлено администратором. Максимум 10 участников.</p>
+    </div>
 
-  <script>
-    async function loadM3U(url) {
-      const response = await fetch(url);
-      const text = await response.text();
-      const lines = text.split('\n');
-      let channels = [];
-      let currentName = '';
+    <div id="chatScreen">
+        <div class="container">
+            <div class="sidebar">
+                <h2>
+                    Участники 
+                    <span class="user-count" id="userCount">0/10</span>
+                </h2>
+                <ul class="users-list" id="usersList"></ul>
+                <div id="inviteSection">
+                    <p>Ссылка для приглашения:</p>
+                    <a href="#" class="invite-link" id="inviteLink">Скопировать ссылку</a>
+                </div>
+            </div>
+            <div class="chat-area">
+                <div class="messages" id="messagesContainer"></div>
+                <div class="input-container">
+                    <input type="text" class="message-input" id="messageInput" placeholder="Напишите сообщение...">
+                    <button id="sendButton">Отправить</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            Чат работает без сервера. Сообщения хранятся локально в вашем браузере.
+        </div>
+    </div>
 
-      for (let line of lines) {
-        line = line.trim();
-        if (line.startsWith('#EXTINF:')) {
-          // Извлекаем название канала
-          const nameMatch = line.match(/,(.*)$/);
-          currentName = nameMatch ? nameMatch[1] : 'Unknown';
-        } else if (line && !line.startsWith('#')) {
-          channels.push({ name: currentName, url: line });
-          currentName = '';
-        }
-      }
-
-      const container = document.getElementById('channels');
-      channels.forEach(ch => {
-        const btn = document.createElement('button');
-        btn.textContent = ch.name;
-        btn.onclick = () => playStream(ch.url);
-        container.appendChild(btn);
-        container.appendChild(document.createElement('br'));
-      });
-    }
-
-    function playStream(url) {
-      const video = document.getElementById('video');
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Для Safari
-        video.src = url;
-        video.addEventListener('loadedmetadata', () => video.play());
-      }
-    }
-    loadM3U('http://raw.githubusercontent.com/Dimonovich/TV/Dimonovich/FREE/TV');
-  </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const STORAGE_USERS_KEY = 'chat_users_2026';
+            const STORAGE_MESSAGES_KEY = 'chat_messages_2026';
+            const ACTIVITY_TIMEOUT = 30000;
+            const MAX_USERS = 10;
+            
+            let currentUser = null;
+            let activityInterval = null;
+            
+            const loginScreen = document.getElementById('loginScreen');
+            const chatScreen = document.getElementById('chatScreen');
+            const usernameInput = document.getElementById('usernameInput');
+            const joinButton = document.getElementById('joinButton');
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const usersList = document.getElementById('usersList');
+            const userCount = document.getElementById('userCount');
+            const inviteLink = document.getElementById('inviteLink');
+            
+            function getActiveUsers() {
+                try {
+                    const usersData = localStorage.getItem(STORAGE_USERS_KEY);
+                    if (!usersData) return [];
+                    
+                    const users = JSON.parse(usersData);
+                    const now = Date.now();
+                    return users.filter(user => (now - user.lastActive) < ACTIVITY_TIMEOUT);
+                } catch (e) {
+                    return [];
+                }
+            }
+            
+            function saveUser(username) {
+                const users = getActiveUsers();
+                const now = Date.now();
+                
+                if (users.some(user => user.username === username)) {
+                    return false;
+                }
+                
+                users.push({ username, lastActive: now });
+                localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+                return true;
+            }
+            
+            function removeUser(username) {
+                let users = getActiveUsers();
+                users = users.filter(user => user.username !== username);
+                localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+            }
+            
+            function updateActivity(username) {
+                let users = getActiveUsers();
+                const now = Date.now();
+                users = users.map(user => 
+                    user.username === username ? { ...user, lastActive: now } : user
+                );
+                localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+            }
+            
+            function getMessages() {
+                try {
+                    const messagesData = localStorage.getItem(STORAGE_MESSAGES_KEY);
+                    return messagesData ? JSON.parse(messagesData) : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            
+            function addMessage(username, text) {
+                const messages = getMessages();
+                messages.push({ 
+                    id: Date.now(), 
+                    username, 
+                    text, 
+                    timestamp: Date.now() 
+                });
+                localStorage.setItem(STORAGE_MESSAGES_KEY, JSON.stringify(messages));
+                triggerStorageEvent();
+            }
+            
+            function triggerStorageEvent() {
+                localStorage.setItem('storage_update', Date.now());
+            }
+            
+            function renderUsers() {
+                const users = getActiveUsers();
+                usersList.innerHTML = '';
+                
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.className = 'user-item';
+                    li.innerHTML = `
+                        <span class="user-status"></span>
+                        <span class="username">${user.username}</span>
+                    `;
+                    usersList.appendChild(li);
+                });
+                
+                userCount.textContent = `${users.length}/${MAX_USERS}`;
+            }
+            
+            function renderMessages() {
+                const messages = getMessages();
+                messagesContainer.innerHTML = '';
+                
+                messages.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `message ${msg.username === currentUser ? 'sent' : 'received'}`;
+                    
+                    const time = new Date(msg.timestamp);
+                    const timeString = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                    
+                    msgDiv.innerHTML = `
+                        <div class="message-header">
+                            <span class="message-username">${msg.username}</span>
+                            <span class="message-time">${timeString}</span>
+                        </div>
+                        <div class="message-content">${msg.text}</div>
+                    `;
+                    
+                    messagesContainer.appendChild(msgDiv);
+                });
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            function generateInviteLink() {
+                const baseUrl = window.location.href.split('?')[0];
+                const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+                return `${baseUrl}?room=${roomId}`;
+            }
+            
+            joinButton.addEventListener('click', () => {
+                const username = usernameInput.value.trim();
+                if (!username) {
+                    alert('Пожалуйста, введите имя');
+                    return;
+                }
+                
+                if (username.length > 20) {
+                    alert('Имя не может быть длиннее 20 символов');
+                    return;
+                }
+                
+                const activeUsers = getActiveUsers();
+                if (activeUsers.length >= MAX_USERS) {
+                    alert('Чат заполнен (максимум 10 человек)');
+                    return;
+                }
+                
+                if (!saveUser(username)) {
+                    alert('Имя уже занято');
+                    return;
+                }
+                
+                currentUser = username;
+                loginScreen.style.display = 'none';
+                chatScreen.style.display = 'block';
+                
+                activityInterval = setInterval(() => {
+                    if (currentUser) updateActivity(currentUser);
+                }, 10000);
+                
+                renderUsers();
+                renderMessages();
+                inviteLink.href = generateInviteLink();
+            });
+            
+            sendButton.addEventListener('click', () => {
+                const text = messageInput.value.trim();
+                if (text && currentUser) {
+                    addMessage(currentUser, text);
+                    messageInput.value = '';
+                    renderMessages();
+                }
+            });
+            
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+            
+            inviteLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigator.clipboard.writeText(inviteLink.href)
+                    .then(() => alert('Ссылка скопирована в буфер обмена!'))
+                    .catch(err => console.error('Ошибка копирования:', err));
+            });
+            
+            window.addEventListener('storage', (e) => {
+                if (e.key === STORAGE_USERS_KEY || 
+                    e.key === STORAGE_MESSAGES_KEY || 
+                    e.key === 'storage_update') {
+                    renderUsers();
+                    renderMessages();
+                }
+            });
+            
+            window.addEventListener('beforeunload', () => {
+                if (currentUser) {
+                    removeUser(currentUser);
+                }
+                if (activityInterval) {
+                    clearInterval(activityInterval);
+                }
+            });
+            
+            // Инициализация
+            renderUsers();
+            renderMessages();
+            
+            // Проверка на наличие комнаты в URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('room')) {
+                const roomId = urlParams.get('room');
+                console.log(`Присоединение к комнате: ${roomId}`);
+            }
+        });
+    </script>
 </body>
 </html>
+
